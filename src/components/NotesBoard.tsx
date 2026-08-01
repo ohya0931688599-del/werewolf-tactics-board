@@ -3,24 +3,22 @@ import { clsx } from 'clsx';
 import { useSwipeable } from 'react-swipeable';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useTacticsStore } from '../store/useTacticsStore';
+import { useState } from 'react';
 
 export const NotesBoard = () => {
   const {
     day,
     alivePlayers,
     historyNotes,
-    activeFocus,
     gameMode,
     setGameMode,
     incrementDay,
     decrementDay,
     togglePlayerAlive,
-    setActiveFocus,
     setSpeechText,
-    toggleAction,
   } = useTacticsStore();
 
-  const isKeypadActive = activeFocus !== null;
+  const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (e) => {
@@ -67,6 +65,7 @@ export const NotesBoard = () => {
   }
 
   const currentDayNotes = historyNotes[day] || {};
+  const quickTags = ['金水', '銀水', '警徽', '查殺', '雙金', '單飛', '悍跳', '重打', '輕踩', '鐵保', '微保'];
 
   return (
     <div className="min-h-screen bg-wolf-dark flex flex-col relative pb-32 font-sans text-gray-100 overflow-x-hidden">
@@ -110,26 +109,15 @@ export const NotesBoard = () => {
               protectedLightBy: note.actions.protectedLightBy || [],
               protectedHeavyBy: note.actions.protectedHeavyBy || [],
             };
-            const { attackLight, attackHeavy, protectLight, protectHeavy, attackedLightBy, attackedHeavyBy, protectedLightBy, protectedHeavyBy } = safeActions;
+            const { attackedLightBy, attackedHeavyBy, protectedLightBy, protectedHeavyBy } = safeActions;
             
-            const isAttackFocused = activeFocus?.playerId === playerId && activeFocus?.field === 'attack';
-            const isProtectFocused = activeFocus?.playerId === playerId && activeFocus?.field === 'protect';
-
-            const handleActionClick = (field: 'attack' | 'protect') => {
-              if (activeFocus?.playerId === playerId && activeFocus?.field === field) {
-                setActiveFocus(playerId, null);
-              } else {
-                setActiveFocus(playerId, field);
-              }
-            };
-
             return (
               <div
                 key={playerId}
                 className={clsx(
                   'bg-wolf-panel rounded-xl p-2 shadow-sm border transition-all duration-300',
                   isAlive ? 'border-gray-700/50' : 'opacity-50 grayscale-[50%] border-gray-800',
-                  (isAttackFocused || isProtectFocused) && 'ring-2 ring-wolf-primary border-transparent'
+                  focusedPlayerId === playerId && 'ring-2 ring-wolf-primary border-transparent'
                 )}
               >
                 <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
@@ -177,57 +165,18 @@ export const NotesBoard = () => {
                       )}
                     </div>
                   )}
-                  
-                  <div className="flex-1 min-w-0"></div>
-
-                  <div className="flex gap-1 shrink-0 ml-auto">
-                    <div
-                      onClick={() => handleActionClick('attack')}
-                      className={clsx(
-                        'flex items-center justify-center gap-1 py-1 px-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border shrink-0',
-                        isAttackFocused
-                          ? 'bg-wolf-danger text-white border-wolf-danger shadow-[0_0_12px_rgba(255,118,117,0.5)] transform scale-[1.02]'
-                          : 'bg-gray-800/60 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-wolf-danger'
-                      )}
-                    >
-                      <Sword className="w-3.5 h-3.5 hidden sm:block" />
-                      <span>打</span>
-                      {(attackLight.length > 0 || attackHeavy.length > 0) && (
-                        <span className="ml-0.5 text-[10px] flex items-center gap-1">
-                          {attackLight.length > 0 && <span className="text-gray-300">輕:{attackLight.join(',')}</span>}
-                          {attackHeavy.length > 0 && <strong className="text-red-400">重:{attackHeavy.join(',')}</strong>}
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      onClick={() => handleActionClick('protect')}
-                      className={clsx(
-                        'flex items-center justify-center gap-1 py-1 px-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border shrink-0',
-                        isProtectFocused
-                          ? 'bg-wolf-success text-white border-wolf-success shadow-[0_0_12px_rgba(0,184,148,0.5)] transform scale-[1.02]'
-                          : 'bg-gray-800/60 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-wolf-success'
-                      )}
-                    >
-                      <Shield className="w-3.5 h-3.5 hidden sm:block" />
-                      <span>保</span>
-                      {(protectLight.length > 0 || protectHeavy.length > 0) && (
-                        <span className="ml-0.5 text-[10px] flex items-center gap-1">
-                          {protectLight.length > 0 && <span className="text-gray-300">微:{protectLight.join(',')}</span>}
-                          {protectHeavy.length > 0 && <strong className="text-green-400">鐵:{protectHeavy.join(',')}</strong>}
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 <div className="relative">
-                  <MessageSquare className="w-3.5 h-3.5 absolute top-2 left-2 text-gray-500" />
+                  <MessageSquare className="w-4 h-4 absolute top-2 left-2 text-gray-500" />
                   <TextareaAutosize
-                    className="w-full bg-gray-900/40 border border-gray-700 rounded-md py-1.5 pl-7 pr-2 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-wolf-primary focus:ring-1 focus:ring-wolf-primary resize-none transition-all"
-                    minRows={1}
+                    className="w-full bg-gray-900/40 border border-gray-700 rounded-md py-1.5 pl-8 pr-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-wolf-primary focus:ring-1 focus:ring-wolf-primary resize-none transition-all"
+                    minRows={2}
                     placeholder="發言紀錄... (點擊喚起系統鍵盤)"
                     value={note.speechText}
                     onChange={(e) => setSpeechText(playerId, e.target.value)}
+                    onFocus={() => setFocusedPlayerId(playerId)}
+                    onBlur={() => setFocusedPlayerId(null)}
                   />
                 </div>
               </div>
@@ -238,98 +187,30 @@ export const NotesBoard = () => {
 
       <div
         className={clsx(
-          'fixed bottom-0 left-0 w-full bg-wolf-dark/95 backdrop-blur-xl border-t border-gray-700/80 p-3 transition-all duration-300 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.6)]',
-          !isKeypadActive && 'translate-y-[100%] opacity-0 pointer-events-none'
+          'fixed bottom-0 left-0 w-full bg-wolf-dark/95 backdrop-blur-xl border-t border-gray-700/80 p-2 transition-all duration-300 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.6)]',
+          !focusedPlayerId && 'translate-y-[100%] opacity-0 pointer-events-none'
         )}
       >
-        <div className="max-w-lg mx-auto">
-          <div className="flex justify-between items-center mb-2 px-1">
-            <span className="text-xs font-medium text-gray-300 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-wolf-primary animate-pulse"></span>
-              {activeFocus
-                ? `為 ${activeFocus.playerId} 號設定${activeFocus.field === 'attack' ? '打 (點1下重打, 點2下輕踩)' : '保 (點1下鐵保, 點2下微保)'}對象`
-                : '選擇對象'}
-            </span>
-            {activeFocus && (
-              <button
-                onClick={() => setActiveFocus(activeFocus.playerId, null)}
-                className="text-xs font-bold px-3 py-1 rounded-md bg-wolf-primary/20 text-wolf-primary hover:bg-wolf-primary/30 active:scale-95 transition-all"
-              >
-                完成
-              </button>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-4 gap-2">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => {
-              const isAlive = alivePlayers.includes(num);
-              const isDisabled = !isAlive;
-              
-              let isSelected = false;
-              let isHeavy = false;
-              let themeColor = 'blue';
-
-              if (activeFocus && currentDayNotes[activeFocus.playerId]) {
-                const actions = currentDayNotes[activeFocus.playerId].actions;
-                if (activeFocus.field === 'attack') {
-                  isSelected = (actions.attackLight || []).includes(num) || (actions.attackHeavy || []).includes(num);
-                  isHeavy = (actions.attackHeavy || []).includes(num);
-                  themeColor = 'red';
-                } else {
-                  isSelected = (actions.protectLight || []).includes(num) || (actions.protectHeavy || []).includes(num);
-                  isHeavy = (actions.protectHeavy || []).includes(num);
-                  themeColor = 'green';
+        <div className="max-w-lg mx-auto flex overflow-x-auto gap-2 pb-1 no-scrollbar items-center">
+          <span className="shrink-0 text-xs text-gray-400 font-bold ml-1">常用:</span>
+          {quickTags.map((tag) => (
+            <button
+              key={tag}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (focusedPlayerId) {
+                  const currentText = currentDayNotes[focusedPlayerId]?.speechText || '';
+                  const newText = currentText + (currentText.endsWith(' ') || currentText.length === 0 ? '' : ' ') + tag;
+                  setSpeechText(focusedPlayerId, newText);
                 }
-              }
-
-              return (
-                <button
-                  key={num}
-                  disabled={isDisabled}
-                  onClick={() => {
-                    if (!isDisabled) toggleAction(num);
-                  }}
-                  className={clsx(
-                    'h-10 sm:h-12 flex items-center justify-center text-lg font-bold rounded-lg transition-all relative overflow-hidden',
-                    isDisabled
-                      ? 'bg-gray-800 text-gray-600 opacity-50 cursor-not-allowed border border-gray-800'
-                      : isHeavy
-                        ? (themeColor === 'red' 
-                            ? 'bg-red-600 text-white border-2 border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.6)] transform scale-105'
-                            : 'bg-green-600 text-white border-2 border-green-400 shadow-[0_0_15px_rgba(22,163,74,0.6)] transform scale-105')
-                        : isSelected 
-                          ? (themeColor === 'red'
-                              ? 'bg-wolf-danger/80 text-white border-2 border-wolf-danger/50 shadow-lg transform scale-105'
-                              : 'bg-wolf-success/80 text-white border-2 border-wolf-success/50 shadow-lg transform scale-105')
-                          : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 active:scale-95'
-                  )}
-                >
-                  {num}
-                  {isHeavy && (
-                    <div className={clsx(
-                      "absolute top-0 right-0 w-3 h-3 rounded-bl flex items-center justify-center transform translate-x-1 -translate-y-1 rotate-12",
-                      themeColor === 'red' ? 'bg-red-400' : 'bg-green-400'
-                    )}>
-                      {themeColor === 'red' ? (
-                        <Sword className="w-2 h-2 text-white" />
-                      ) : (
-                        <Shield className="w-2 h-2 text-white" />
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+              }}
+              className="shrink-0 bg-gray-800 text-gray-200 border border-gray-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-wolf-primary/80 hover:text-white hover:border-wolf-primary active:scale-95 transition-all"
+            >
+              {tag}
+            </button>
+          ))}
         </div>
       </div>
-
-      {isKeypadActive && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setActiveFocus(activeFocus.playerId, null)}
-        />
-      )}
     </div>
   );
 };
