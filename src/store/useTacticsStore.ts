@@ -42,6 +42,7 @@ interface TacticsStoreState {
   speakOrder: Record<number, number[]>; // Day -> array of playerIds in speaking order
   voteHistory?: VoteHistoryItem[];
   gameMode: 'online' | 'manual' | null; // null means start screen
+  roomId: string | null;
   sheriffWithdrawals: number[]; // Array of playerIds who withdrew from sheriff election on day 0
 }
 
@@ -52,6 +53,7 @@ interface TacticsStoreActions {
   addSpeaker: (day: number, playerId: number) => void;
   removeSpeaker: (day: number, playerId: number) => void;
   setGameMode: (mode: 'online' | 'manual' | null) => void;
+  setRoomId: (roomId: string | null) => void;
   incrementDay: () => void;
   decrementDay: () => void;
   togglePlayerAlive: (playerId: number) => void;
@@ -153,6 +155,7 @@ export const useTacticsStore = create<TacticsStore>()(
       speakOrder: {}, // Starts empty
       voteHistory: [],
       gameMode: null,
+      roomId: null,
       sheriffWithdrawals: [],
 
       setGameState: (day, alivePlayers, voteHistory) => {
@@ -172,6 +175,7 @@ export const useTacticsStore = create<TacticsStore>()(
       },
       
       setGameMode: (gameMode) => set({ gameMode }),
+      setRoomId: (roomId) => set({ roomId }),
       
       incrementDay: () => set((state) => {
         const nextDay = state.day + 1;
@@ -271,20 +275,22 @@ export const useTacticsStore = create<TacticsStore>()(
         });
       },
 
-      resetNotes: () => set({ 
+      resetNotes: () => set(() => ({ 
         historyNotes: { 0: initialNotes() }, 
         day: 0, 
         speakOrder: {},
         voteHistory: [],
         sheriffWithdrawals: [],
-        alivePlayers: Array.from({ length: 12 }, (_, i) => i + 1) 
-      }),
+        alivePlayers: Array.from({ length: 12 }, (_, i) => i + 1),
+        // gameMode and roomId are preserved so the user can easily restart the game in the same room
+      })),
     }),
     {
       name: 'werewolf-tactics-storage',
       partialize: (state) => ({ 
         historyNotes: state.historyNotes, 
-        gameMode: state.gameMode, 
+        gameMode: state.gameMode,
+        roomId: state.roomId,
         day: state.day, 
         alivePlayers: state.alivePlayers,
         speakOrder: state.speakOrder,

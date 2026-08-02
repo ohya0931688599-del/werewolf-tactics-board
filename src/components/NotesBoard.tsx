@@ -28,6 +28,7 @@ export const NotesBoard = () => {
 
   const [focusedSpeechPlayerId, setFocusedSpeechPlayerId] = useState<number | null>(null);
   const [focusedTagPlayerId, setFocusedTagPlayerId] = useState<number | null>(null);
+  const [roomIdInput, setRoomIdInput] = useState('');
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (e) => {
@@ -46,27 +47,51 @@ export const NotesBoard = () => {
   });
 
   if (gameMode === null) {
+    const handleConnect = () => {
+      if (roomIdInput.trim().length > 0) {
+        useTacticsStore.getState().setRoomId(roomIdInput.trim());
+        setGameMode('online');
+      }
+    };
+
     return (
       <div className="min-h-screen bg-wolf-dark flex flex-col items-center justify-center p-6 text-gray-100 font-sans">
         <Moon className="w-20 h-20 text-wolf-primary mb-6" />
         <h1 className="text-3xl font-bold mb-2">狼人殺戰術筆記</h1>
-        <p className="text-gray-400 mb-12 text-center text-sm">請選擇您的使用模式</p>
+        <p className="text-gray-400 mb-12 text-center text-sm">請輸入面殺伺服器的房號以連線觀戰</p>
         
-        <div className="flex flex-col gap-4 w-full max-w-sm">
-          <button
-            onClick={() => setGameMode('online')}
-            className="flex items-center justify-center gap-3 bg-wolf-primary text-white py-4 px-6 rounded-2xl text-lg font-bold shadow-[0_0_20px_rgba(108,92,231,0.4)] hover:scale-105 transition-transform"
-          >
-            <Gamepad2 className="w-6 h-6" />
-            面殺連線 (同步伺服器)
-          </button>
+        <div className="flex flex-col gap-6 w-full max-w-sm">
+          <div className="flex flex-col gap-3">
+            <input 
+              type="text" 
+              placeholder="請輸入 4 位數房號" 
+              value={roomIdInput}
+              onChange={(e) => setRoomIdInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl py-4 px-6 text-center text-xl font-bold text-gray-100 focus:outline-none focus:border-wolf-primary focus:ring-2 focus:ring-wolf-primary transition-all shadow-inner"
+            />
+            <button
+              onClick={handleConnect}
+              disabled={!roomIdInput.trim()}
+              className="flex items-center justify-center gap-3 bg-wolf-primary text-white py-4 px-6 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(108,92,231,0.4)] hover:bg-wolf-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Gamepad2 className="w-6 h-6" />
+              加入連線
+            </button>
+          </div>
           
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-gray-800"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-500 text-sm">或</span>
+            <div className="flex-grow border-t border-gray-800"></div>
+          </div>
+
           <button
             onClick={() => setGameMode('manual')}
-            className="flex items-center justify-center gap-3 bg-gray-800 text-gray-200 border border-gray-700 py-4 px-6 rounded-2xl text-lg font-bold hover:bg-gray-700 hover:scale-105 transition-transform"
+            className="flex items-center justify-center gap-3 bg-gray-800 text-gray-300 border border-gray-700 py-3 px-6 rounded-xl text-base font-bold hover:bg-gray-700 active:scale-[0.98] transition-all"
           >
-            <PenTool className="w-6 h-6" />
-            手動紀錄 (看影片複盤)
+            <PenTool className="w-5 h-5" />
+            手動紀錄 (無連線模式)
           </button>
         </div>
       </div>
@@ -110,6 +135,11 @@ export const NotesBoard = () => {
             <h1 className="text-xl font-bold tracking-wide flex items-center gap-2">
               <Moon className="w-6 h-6 text-wolf-primary" />
               <span>戰術筆記</span>
+              {gameMode === 'online' && useTacticsStore.getState().roomId && (
+                <span className="text-xs font-medium text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full ml-1 border border-gray-700 shadow-inner">
+                  房號: {useTacticsStore.getState().roomId}
+                </span>
+              )}
             </h1>
             <div className="flex items-center gap-3 text-sm font-medium">
               <div className="flex items-center gap-1.5 text-wolf-warning bg-wolf-warning/10 px-3 py-1.5 rounded-full shadow-inner relative">
