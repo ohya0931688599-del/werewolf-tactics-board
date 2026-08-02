@@ -132,7 +132,15 @@ export const NotesBoard = () => {
       <header className="sticky top-0 z-50 bg-wolf-panel border-b border-gray-700/50 shadow-md">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-wide flex items-center gap-2">
+            <h1 
+              className="text-xl font-bold tracking-wide flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                if (confirm('確定要離開目前的紀錄並返回首頁嗎？(原本的紀錄仍會保留在您的裝置中)')) {
+                  setGameMode(null);
+                }
+              }}
+              title="返回首頁"
+            >
               <Moon className="w-6 h-6 text-wolf-primary" />
               <span>戰術筆記</span>
               {gameMode === 'online' && useTacticsStore.getState().roomId && (
