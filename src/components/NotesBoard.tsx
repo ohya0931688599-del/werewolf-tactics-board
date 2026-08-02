@@ -1,4 +1,4 @@
-import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool } from 'lucide-react';
+import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool, Delete } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useSwipeable } from 'react-swipeable';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -10,15 +10,20 @@ export const NotesBoard = () => {
     day,
     alivePlayers,
     historyNotes,
+    speakOrder,
     gameMode,
     setGameMode,
     incrementDay,
     decrementDay,
     togglePlayerAlive,
     setSpeechText,
+    setTagText,
+    addSpeaker,
+    removeSpeaker,
   } = useTacticsStore();
 
-  const [focusedPlayerId, setFocusedPlayerId] = useState<number | null>(null);
+  const [focusedSpeechPlayerId, setFocusedSpeechPlayerId] = useState<number | null>(null);
+  const [focusedTagPlayerId, setFocusedTagPlayerId] = useState<number | null>(null);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (e) => {
@@ -65,10 +70,31 @@ export const NotesBoard = () => {
   }
 
   const currentDayNotes = historyNotes[day] || {};
-  const quickTags = ['金水', '銀水', '警徽', '查殺', '雙金', '單飛', '悍跳', '重打', '輕踩', '鐵保', '微保'];
+  const currentOrder = speakOrder[day] || [];
+  const orderedPlayers = [
+    ...currentOrder,
+    ...Array.from({ length: 12 }, (_, i) => i + 1).filter(id => !currentOrder.includes(id))
+  ];
+
+  const customKeyboardTags = ['金水', '銀水', '查殺', '警徽', '雙金', '單飛', '悍跳', '退水', '重打', '輕踩', '鐵保', '微保'];
+  const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  const appendTag = (text: string) => {
+    if (focusedTagPlayerId) {
+      const current = currentDayNotes[focusedTagPlayerId]?.tagText || '';
+      setTagText(focusedTagPlayerId, current + text);
+    }
+  };
+
+  const backspaceTag = () => {
+    if (focusedTagPlayerId) {
+      const current = currentDayNotes[focusedTagPlayerId]?.tagText || '';
+      setTagText(focusedTagPlayerId, current.slice(0, -1));
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-wolf-dark flex flex-col relative pb-32 font-sans text-gray-100 overflow-x-hidden">
+    <div className="min-h-screen bg-wolf-dark flex flex-col relative pb-48 font-sans text-gray-100 overflow-x-hidden">
       <header className="sticky top-0 z-50 bg-wolf-panel border-b border-gray-700/50 shadow-md">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -78,9 +104,7 @@ export const NotesBoard = () => {
             </h1>
             <div className="flex items-center gap-3 text-sm font-medium">
               <div className="flex items-center gap-1.5 text-wolf-warning bg-wolf-warning/10 px-3 py-1.5 rounded-full shadow-inner relative">
-                <span>第</span>
-                <span className="text-base font-bold px-1">{day > 0 ? day : '-'}</span>
-                <span>天</span>
+                <span className="text-base font-bold px-1">{day === 0 ? '選警長' : `第 ${day} 天`}</span>
               </div>
               <div className="flex items-center gap-1.5 text-wolf-success bg-wolf-success/10 px-2.5 py-1.5 rounded-full shadow-inner">
                 <Users className="w-4 h-4" />
@@ -94,7 +118,7 @@ export const NotesBoard = () => {
       
       <main {...swipeHandlers} className="flex-1 overflow-y-auto w-full max-w-lg mx-auto p-1.5 flex flex-col">
         <div className="flex flex-col gap-1.5">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((playerId) => {
+          {orderedPlayers.map((playerId) => {
             const isAlive = alivePlayers.includes(playerId);
             const note = currentDayNotes[playerId];
             if (!note) return null;
@@ -111,23 +135,33 @@ export const NotesBoard = () => {
             };
             const { attackedLightBy, attackedHeavyBy, protectedLightBy, protectedHeavyBy } = safeActions;
             
+            let pressTimer: ReturnType<typeof setTimeout>;
+            const handleLongPress = () => removeSpeaker(day, playerId);
+
             return (
               <div
                 key={playerId}
                 className={clsx(
                   'bg-wolf-panel rounded-xl p-2 shadow-sm border transition-all duration-300',
                   isAlive ? 'border-gray-700/50' : 'opacity-50 grayscale-[50%] border-gray-800',
-                  focusedPlayerId === playerId && 'ring-2 ring-wolf-primary border-transparent'
+                  (focusedSpeechPlayerId === playerId || focusedTagPlayerId === playerId) && 'ring-2 ring-wolf-primary border-transparent'
                 )}
               >
-                <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 mb-1.5 flex-wrap relative">
                   <div
+                    onContextMenu={(e) => { e.preventDefault(); handleLongPress(); }}
+                    onTouchStart={() => { pressTimer = setTimeout(handleLongPress, 600); }}
+                    onTouchEnd={() => clearTimeout(pressTimer)}
+                    onTouchMove={() => clearTimeout(pressTimer)}
+                    onMouseDown={() => { pressTimer = setTimeout(handleLongPress, 600); }}
+                    onMouseUp={() => clearTimeout(pressTimer)}
+                    onMouseLeave={() => clearTimeout(pressTimer)}
                     onClick={() => {
                       if (gameMode === 'manual') togglePlayerAlive(playerId);
                     }}
                     className={clsx(
-                      'flex items-center justify-center w-7 h-7 shrink-0 rounded-full text-sm font-bold shadow-sm transition-transform',
-                      gameMode === 'manual' ? 'cursor-pointer hover:scale-105 active:scale-95 ring-2 ring-gray-600' : '',
+                      'flex items-center justify-center w-7 h-7 shrink-0 rounded-full text-sm font-bold shadow-sm transition-transform select-none',
+                      gameMode === 'manual' ? 'cursor-pointer hover:scale-105 ring-2 ring-gray-600' : '',
                       isAlive ? 'bg-wolf-primary text-white' : 'bg-gray-600 text-gray-300'
                     )}
                   >
@@ -137,6 +171,12 @@ export const NotesBoard = () => {
                   {!isAlive && (
                     <span className="shrink-0 text-[10px] font-bold text-wolf-danger bg-wolf-danger/20 px-1.5 py-0.5 rounded">
                       已出局
+                    </span>
+                  )}
+
+                  {currentOrder.includes(playerId) && (
+                    <span className="shrink-0 text-[10px] font-bold text-gray-300 bg-gray-700 px-1.5 py-0.5 rounded cursor-pointer" onClick={() => removeSpeaker(day, playerId)}>
+                      已發言(長按取消)
                     </span>
                   )}
 
@@ -167,17 +207,43 @@ export const NotesBoard = () => {
                   )}
                 </div>
 
-                <div className="relative">
-                  <MessageSquare className="w-4 h-4 absolute top-2 left-2 text-gray-500" />
-                  <TextareaAutosize
-                    className="w-full bg-gray-900/40 border border-gray-700 rounded-md py-1.5 pl-8 pr-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-wolf-primary focus:ring-1 focus:ring-wolf-primary resize-none transition-all"
-                    minRows={2}
-                    placeholder="發言紀錄... (點擊喚起系統鍵盤)"
-                    value={note.speechText}
-                    onChange={(e) => setSpeechText(playerId, e.target.value)}
-                    onFocus={() => setFocusedPlayerId(playerId)}
-                    onBlur={() => setFocusedPlayerId(null)}
-                  />
+                <div className="flex flex-col gap-1.5">
+                  {/* Top Box: Tags */}
+                  <div
+                    className={clsx(
+                      "w-full min-h-[36px] bg-gray-900/60 border rounded-md py-1.5 px-2 text-sm text-gray-100 flex items-center flex-wrap gap-1 transition-all cursor-pointer",
+                      focusedTagPlayerId === playerId ? "border-wolf-primary ring-1 ring-wolf-primary" : "border-gray-700 hover:border-gray-500"
+                    )}
+                    onClick={() => {
+                      setFocusedTagPlayerId(playerId);
+                      setFocusedSpeechPlayerId(null);
+                      addSpeaker(day, playerId);
+                    }}
+                  >
+                    {note.tagText ? (
+                      <span className="text-wolf-primary font-bold">{note.tagText}</span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">快捷標籤... (點擊喚起自訂鍵盤)</span>
+                    )}
+                  </div>
+                  
+                  {/* Bottom Box: Speech */}
+                  <div className="relative">
+                    <MessageSquare className="w-4 h-4 absolute top-2 left-2 text-gray-500" />
+                    <TextareaAutosize
+                      className="w-full bg-gray-900/40 border border-gray-700 rounded-md py-1.5 pl-8 pr-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-wolf-primary focus:ring-1 focus:ring-wolf-primary resize-none transition-all"
+                      minRows={1}
+                      placeholder="詳細發言紀錄... (點擊喚起系統鍵盤)"
+                      value={note.speechText}
+                      onChange={(e) => setSpeechText(playerId, e.target.value)}
+                      onFocus={() => {
+                        setFocusedSpeechPlayerId(playerId);
+                        setFocusedTagPlayerId(null);
+                        addSpeaker(day, playerId);
+                      }}
+                      onBlur={() => setFocusedSpeechPlayerId(null)}
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -185,32 +251,65 @@ export const NotesBoard = () => {
         </div>
       </main>
 
+      {/* Custom Keyboard for Tags */}
       <div
         className={clsx(
           'fixed bottom-0 left-0 w-full bg-wolf-dark/95 backdrop-blur-xl border-t border-gray-700/80 p-2 transition-all duration-300 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.6)]',
-          !focusedPlayerId && 'translate-y-[100%] opacity-0 pointer-events-none'
+          !focusedTagPlayerId && 'translate-y-[100%] opacity-0 pointer-events-none'
         )}
       >
-        <div className="max-w-lg mx-auto flex overflow-x-auto gap-2 pb-1 no-scrollbar items-center">
-          <span className="shrink-0 text-xs text-gray-400 font-bold ml-1">常用:</span>
-          {quickTags.map((tag) => (
+        <div className="max-w-lg mx-auto flex gap-2">
+          {/* Left: Tags */}
+          <div className="flex-1 grid grid-cols-4 gap-1.5">
+            {customKeyboardTags.map(tag => (
+              <button
+                key={tag}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => appendTag(tag)}
+                className="bg-gray-800 text-gray-200 border border-gray-700 rounded-md text-xs sm:text-sm py-2.5 font-medium hover:bg-gray-700 active:scale-95 transition-transform"
+              >
+                {tag}
+              </button>
+            ))}
             <button
-              key={tag}
               onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                if (focusedPlayerId) {
-                  const currentText = currentDayNotes[focusedPlayerId]?.speechText || '';
-                  const newText = currentText + (currentText.endsWith(' ') || currentText.length === 0 ? '' : ' ') + tag;
-                  setSpeechText(focusedPlayerId, newText);
-                }
-              }}
-              className="shrink-0 bg-gray-800 text-gray-200 border border-gray-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-wolf-primary/80 hover:text-white hover:border-wolf-primary active:scale-95 transition-all"
+              onClick={() => appendTag(' ')}
+              className="bg-gray-800 text-gray-200 border border-gray-700 rounded-md text-xs sm:text-sm py-2.5 font-medium hover:bg-gray-700 active:scale-95 transition-transform col-span-2"
             >
-              {tag}
+              [ 空格 ]
             </button>
-          ))}
+            <button
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={backspaceTag}
+              className="bg-wolf-danger/20 text-wolf-danger border border-wolf-danger/30 rounded-md text-sm py-2.5 font-bold hover:bg-wolf-danger/30 active:scale-95 transition-transform col-span-2 flex items-center justify-center gap-1"
+            >
+              <Delete className="w-4 h-4" /> 刪除
+            </button>
+          </div>
+          
+          {/* Right: Numbers */}
+          <div className="w-[110px] shrink-0 grid grid-cols-3 gap-1.5">
+            {numbers.map(num => (
+              <button
+                key={num}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => appendTag(num.toString())}
+                className="bg-wolf-primary/90 text-white font-bold rounded-md py-2.5 hover:bg-wolf-primary active:scale-95 transition-transform shadow-md"
+              >
+                {num}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      
+      {/* Click-away overlay to close custom keyboard */}
+      {focusedTagPlayerId && (
+        <div
+          className="fixed inset-0 z-40 bg-black/20"
+          onClick={() => setFocusedTagPlayerId(null)}
+        />
+      )}
     </div>
   );
 };
