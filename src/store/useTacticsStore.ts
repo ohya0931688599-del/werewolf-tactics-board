@@ -42,6 +42,7 @@ interface TacticsStoreState {
   speakOrder: Record<number, number[]>; // Day -> array of playerIds in speaking order
   voteHistory?: VoteHistoryItem[];
   gameMode: 'online' | 'manual' | null; // null means start screen
+  sheriffWithdrawals: number[]; // Array of playerIds who withdrew from sheriff election on day 0
 }
 
 interface TacticsStoreActions {
@@ -54,6 +55,7 @@ interface TacticsStoreActions {
   incrementDay: () => void;
   decrementDay: () => void;
   togglePlayerAlive: (playerId: number) => void;
+  toggleSheriffWithdrawal: (playerId: number) => void;
   resetNotes: () => void;
 }
 
@@ -151,6 +153,7 @@ export const useTacticsStore = create<TacticsStore>()(
       speakOrder: {}, // Starts empty
       voteHistory: [],
       gameMode: null,
+      sheriffWithdrawals: [],
 
       setGameState: (day, alivePlayers, voteHistory) => {
         const { gameMode, historyNotes, speakOrder } = get();
@@ -194,6 +197,15 @@ export const useTacticsStore = create<TacticsStore>()(
           return { alivePlayers: state.alivePlayers.filter(id => id !== playerId) };
         } else {
           return { alivePlayers: [...state.alivePlayers, playerId].sort((a, b) => a - b) };
+        }
+      }),
+
+      toggleSheriffWithdrawal: (playerId) => set((state) => {
+        const isWithdrawn = state.sheriffWithdrawals.includes(playerId);
+        if (isWithdrawn) {
+          return { sheriffWithdrawals: state.sheriffWithdrawals.filter(id => id !== playerId) };
+        } else {
+          return { sheriffWithdrawals: [...state.sheriffWithdrawals, playerId].sort((a, b) => a - b) };
         }
       }),
 
@@ -264,6 +276,7 @@ export const useTacticsStore = create<TacticsStore>()(
         day: 0, 
         speakOrder: {},
         voteHistory: [],
+        sheriffWithdrawals: [],
         alivePlayers: Array.from({ length: 12 }, (_, i) => i + 1) 
       }),
     }),
@@ -275,7 +288,8 @@ export const useTacticsStore = create<TacticsStore>()(
         day: state.day, 
         alivePlayers: state.alivePlayers,
         speakOrder: state.speakOrder,
-        voteHistory: state.voteHistory
+        voteHistory: state.voteHistory,
+        sheriffWithdrawals: state.sheriffWithdrawals
       }),
     }
   )

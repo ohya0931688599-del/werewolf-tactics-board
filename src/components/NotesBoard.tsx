@@ -1,4 +1,4 @@
-import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool, Delete } from 'lucide-react';
+import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool, Delete, RotateCcw } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useSwipeable } from 'react-swipeable';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -21,6 +21,9 @@ export const NotesBoard = () => {
     setTagText,
     addSpeaker,
     removeSpeaker,
+    sheriffWithdrawals,
+    toggleSheriffWithdrawal,
+    resetNotes,
   } = useTacticsStore();
 
   const [focusedSpeechPlayerId, setFocusedSpeechPlayerId] = useState<number | null>(null);
@@ -117,6 +120,18 @@ export const NotesBoard = () => {
                 <span className="text-base font-bold">{alivePlayers.length}</span>
                 <span>存活</span>
               </div>
+              <button 
+                onClick={() => {
+                  if (confirm('確定要清除所有紀錄並重開一局嗎？')) {
+                    resetNotes();
+                  }
+                }}
+                className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 rounded-full transition-colors border border-gray-700 ml-1"
+                title="重開一局"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="text-xs font-bold hidden sm:inline">重開</span>
+              </button>
             </div>
           </div>
         </div>
@@ -126,6 +141,8 @@ export const NotesBoard = () => {
         <div className="flex flex-col gap-1.5">
           {orderedPlayers.map((playerId) => {
             const isAlive = alivePlayers.includes(playerId);
+            const isDead = !isAlive;
+            const isWithdrawn = day === 0 && sheriffWithdrawals.includes(playerId);
             const note = currentDayNotes[playerId];
             if (!note) return null;
 
@@ -169,7 +186,8 @@ export const NotesBoard = () => {
                 key={playerId}
                 className={clsx(
                   'bg-wolf-panel rounded-xl p-2 shadow-sm border transition-all duration-300',
-                  isAlive ? 'border-gray-700/50' : 'opacity-50 grayscale-[50%] border-gray-800',
+                  isDead ? 'opacity-50 grayscale-[50%] border-gray-800' :
+                  isWithdrawn ? 'opacity-75 border-gray-700/50' : 'border-gray-700/50',
                   (focusedSpeechPlayerId === playerId || focusedTagPlayerId === playerId) && 'ring-2 ring-wolf-primary border-transparent'
                 )}
               >
@@ -183,20 +201,30 @@ export const NotesBoard = () => {
                     onMouseUp={() => clearTimeout(pressTimer)}
                     onMouseLeave={() => clearTimeout(pressTimer)}
                     onClick={() => {
-                      if (gameMode === 'manual') togglePlayerAlive(playerId);
+                      if (gameMode === 'manual') {
+                        if (day === 0) toggleSheriffWithdrawal(playerId);
+                        else togglePlayerAlive(playerId);
+                      }
                     }}
                     className={clsx(
                       'flex items-center justify-center w-7 h-7 shrink-0 rounded-full text-sm font-bold shadow-sm transition-transform select-none',
                       gameMode === 'manual' ? 'cursor-pointer hover:scale-105 ring-2 ring-gray-600' : '',
-                      isAlive ? 'bg-wolf-primary text-white' : 'bg-gray-600 text-gray-300'
+                      isDead ? 'bg-gray-600 text-gray-300' :
+                      isWithdrawn ? 'bg-gray-500 text-gray-300' : 'bg-wolf-primary text-white'
                     )}
                   >
                     {playerId}
                   </div>
                   
-                  {!isAlive && (
+                  {isDead && (
                     <span className="shrink-0 text-[10px] font-bold text-wolf-danger bg-wolf-danger/20 px-1.5 py-0.5 rounded">
                       已出局
+                    </span>
+                  )}
+
+                  {isWithdrawn && !isDead && (
+                    <span className="shrink-0 text-[10px] font-bold text-gray-400 bg-gray-700 px-1.5 py-0.5 rounded">
+                      退水
                     </span>
                   )}
 
