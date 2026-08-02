@@ -19,16 +19,33 @@ export interface PlayerNote {
   actions: ActionLog;
 }
 
+export interface VoteParticipant {
+    seatNumber: number;
+    isSheriff: boolean;
+}
+
+export interface VoteRecord {
+    target: number | '棄票';
+    totalVotes: number;
+    voters: VoteParticipant[];
+}
+
+export interface VoteHistoryItem {
+    title: string;
+    records: VoteRecord[];
+}
+
 interface TacticsStoreState {
   day: number;
   alivePlayers: number[];
   historyNotes: Record<number, Record<number, PlayerNote>>; // Day -> PlayerId -> Note
   speakOrder: Record<number, number[]>; // Day -> array of playerIds in speaking order
+  voteHistory?: VoteHistoryItem[];
   gameMode: 'online' | 'manual' | null; // null means start screen
 }
 
 interface TacticsStoreActions {
-  setGameState: (day: number, alivePlayers: number[]) => void;
+  setGameState: (day: number, alivePlayers: number[], voteHistory?: VoteHistoryItem[]) => void;
   setSpeechText: (playerId: number, text: string) => void;
   setTagText: (playerId: number, text: string) => void;
   addSpeaker: (day: number, playerId: number) => void;
@@ -132,9 +149,10 @@ export const useTacticsStore = create<TacticsStore>()(
         0: initialNotes(), // Initialize day 0
       },
       speakOrder: {}, // Starts empty
+      voteHistory: [],
       gameMode: null,
 
-      setGameState: (day, alivePlayers) => {
+      setGameState: (day, alivePlayers, voteHistory) => {
         const { gameMode, historyNotes, speakOrder } = get();
         if (gameMode === 'online') {
           // If a new day arrives from socket, ensure historyNotes has it
@@ -146,7 +164,7 @@ export const useTacticsStore = create<TacticsStore>()(
           if (!updatedSpeakOrder[day]) {
             updatedSpeakOrder[day] = [];
           }
-          set({ day, alivePlayers, historyNotes: updatedHistory, speakOrder: updatedSpeakOrder });
+          set({ day, alivePlayers, historyNotes: updatedHistory, speakOrder: updatedSpeakOrder, voteHistory });
         }
       },
       
@@ -245,6 +263,7 @@ export const useTacticsStore = create<TacticsStore>()(
         historyNotes: { 0: initialNotes() }, 
         day: 0, 
         speakOrder: {},
+        voteHistory: [],
         alivePlayers: Array.from({ length: 12 }, (_, i) => i + 1) 
       }),
     }),
@@ -255,7 +274,8 @@ export const useTacticsStore = create<TacticsStore>()(
         gameMode: state.gameMode, 
         day: state.day, 
         alivePlayers: state.alivePlayers,
-        speakOrder: state.speakOrder
+        speakOrder: state.speakOrder,
+        voteHistory: state.voteHistory
       }),
     }
   )

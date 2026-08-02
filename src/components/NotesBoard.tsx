@@ -11,6 +11,7 @@ export const NotesBoard = () => {
     alivePlayers,
     historyNotes,
     speakOrder,
+    voteHistory,
     gameMode,
     setGameMode,
     incrementDay,
@@ -76,6 +77,11 @@ export const NotesBoard = () => {
     ...Array.from({ length: 12 }, (_, i) => i + 1).filter(id => !currentOrder.includes(id))
   ];
 
+  const dayVotes = voteHistory?.filter((h) => {
+    if (day === 0) return h.title.includes('警長');
+    return h.title.includes(`第 ${day} 天`);
+  }) || [];
+
   const customKeyboardTags = ['金水', '銀水', '查殺', '警徽', '雙金', '單飛', '悍跳', '退水', '重打', '輕踩', '鐵保', '微保'];
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -138,6 +144,26 @@ export const NotesBoard = () => {
             let pressTimer: ReturnType<typeof setTimeout>;
             const handleLongPress = () => removeSpeaker(day, playerId);
 
+            const playerVoteBadges = dayVotes.map((dayVote, idx) => {
+              const isPk = dayVote.title.includes('PK');
+              const targetRecord = dayVote.records.find(r => r.voters.some(v => v.seatNumber === playerId));
+              const targetStr = targetRecord ? targetRecord.target : '未投';
+              
+              const votersRecord = dayVote.records.find(r => r.target === playerId);
+              const votersArray = votersRecord ? votersRecord.voters.map(v => v.seatNumber) : [];
+              
+              if (targetStr === '未投' && votersArray.length === 0) return null;
+              
+              return (
+                <div key={`vote-${idx}`} className="flex items-center gap-1 text-[10px] font-medium bg-gray-800 px-1.5 py-0.5 rounded-md border border-gray-700">
+                  <span className="text-gray-400">{isPk ? 'PK:' : '投票:'}</span>
+                  {targetStr !== '未投' && <span className="text-wolf-primary">投 {targetStr}</span>}
+                  {targetStr !== '未投' && votersArray.length > 0 && <span className="text-gray-600">|</span>}
+                  {votersArray.length > 0 && <span className="text-wolf-warning">被 {votersArray.join(',')} 投</span>}
+                </div>
+              );
+            }).filter(Boolean);
+
             return (
               <div
                 key={playerId}
@@ -179,6 +205,8 @@ export const NotesBoard = () => {
                       已發言(長按取消)
                     </span>
                   )}
+                  
+                  {playerVoteBadges}
 
                   {(attackedLightBy.length > 0 || attackedHeavyBy.length > 0 || protectedLightBy.length > 0 || protectedHeavyBy.length > 0) && (
                     <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-medium bg-gray-900/60 px-1.5 py-0.5 rounded-md border border-gray-800">
