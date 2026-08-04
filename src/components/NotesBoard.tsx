@@ -111,14 +111,11 @@ export const NotesBoard = () => {
     const distCCW = (p1 - p2 + 12) % 12;
     isClockwise = distCW <= distCCW;
     referenceSpeaker = currentOrder[currentOrder.length - 1];
-  } else if (currentOrder.length === 1) {
-    referenceSpeaker = currentOrder[0];
-    isClockwise = true; // Default assumption if only 1 speaker tapped
   }
 
   const remainingPlayers = Array.from({ length: 12 }, (_, i) => i + 1).filter(id => !currentOrder.includes(id));
 
-  if (currentOrder.length > 0) {
+  if (currentOrder.length >= 2) {
     remainingPlayers.sort((a, b) => {
       const distA = isClockwise ? (a - referenceSpeaker + 12) % 12 : (referenceSpeaker - a + 12) % 12;
       const distB = isClockwise ? (b - referenceSpeaker + 12) % 12 : (referenceSpeaker - b + 12) % 12;
