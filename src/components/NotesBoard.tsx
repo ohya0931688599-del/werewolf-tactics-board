@@ -410,7 +410,7 @@ export const NotesBoard = () => {
               <button
                 key={num}
                 onPointerDown={(e) => e.preventDefault()}
-                onClick={() => appendTag(num.toString())}
+                onClick={() => appendTag(num.toString() + ' ')}
                 className="bg-wolf-primary/90 text-white font-bold rounded-md py-2.5 hover:bg-wolf-primary active:scale-95 transition-transform shadow-md"
               >
                 {num}
