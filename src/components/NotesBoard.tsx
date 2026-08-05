@@ -1,4 +1,4 @@
-import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool, Delete, RotateCcw } from 'lucide-react';
+import { Moon, Users, MessageSquare, Shield, Sword, Gamepad2, PenTool, Delete, RotateCcw, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useSwipeable } from 'react-swipeable';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -217,9 +217,6 @@ export const NotesBoard = () => {
               protectedHeavyBy: note.actions.protectedHeavyBy || [],
             };
             const { attackedLightBy, attackedHeavyBy, protectedLightBy, protectedHeavyBy } = safeActions;
-            
-            let pressTimer: ReturnType<typeof setTimeout>;
-            const handleLongPress = () => removeSpeaker(day, playerId);
 
             const playerVoteBadges = dayVotes.map((dayVote, idx) => {
               const isPk = dayVote.title.includes('PK');
@@ -253,13 +250,6 @@ export const NotesBoard = () => {
               >
                 <div className="flex items-center gap-1.5 mb-1.5 flex-wrap relative">
                   <div
-                    onContextMenu={(e) => { e.preventDefault(); handleLongPress(); }}
-                    onTouchStart={() => { pressTimer = setTimeout(handleLongPress, 600); }}
-                    onTouchEnd={() => clearTimeout(pressTimer)}
-                    onTouchMove={() => clearTimeout(pressTimer)}
-                    onMouseDown={() => { pressTimer = setTimeout(handleLongPress, 600); }}
-                    onMouseUp={() => clearTimeout(pressTimer)}
-                    onMouseLeave={() => clearTimeout(pressTimer)}
                     onClick={() => {
                       if (gameMode === 'manual') {
                         if (day === 0) toggleSheriffWithdrawal(playerId);
@@ -289,9 +279,13 @@ export const NotesBoard = () => {
                   )}
 
                   {currentOrder.includes(playerId) && (
-                    <span className="shrink-0 text-[10px] font-bold text-gray-300 bg-gray-700 px-1.5 py-0.5 rounded cursor-pointer" onClick={() => removeSpeaker(day, playerId)}>
-                      已發言(長按取消)
-                    </span>
+                    <button 
+                      className="ml-auto shrink-0 flex items-center gap-1 text-[10px] font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 px-1.5 py-0.5 rounded transition-colors active:scale-95" 
+                      onClick={() => removeSpeaker(day, playerId)}
+                      title="取消發言排序"
+                    >
+                      發言中 <X className="w-3 h-3" />
+                    </button>
                   )}
                   
                   {playerVoteBadges}
