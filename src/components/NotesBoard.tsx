@@ -132,7 +132,7 @@ export const NotesBoard = () => {
     return h.title.includes(`第 ${day} 天`);
   }) || [];
 
-  const customKeyboardTags = ['金水', '查殺', '警徽', '查殺', '狼坑', '懷疑', '關注', '好人', '重打', '輕踩', '鐵保', '微保'];
+  const customKeyboardTags = ['金水', '查殺', '警徽', '銀水', '狼坑', '懷疑', '關注', '好人', '重打', '輕踩', '鐵保', '流'];
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const appendTag = (text: string) => {
