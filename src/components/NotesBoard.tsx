@@ -278,7 +278,7 @@ export const NotesBoard = () => {
                     </span>
                   )}
 
-                  {currentOrder.includes(playerId) && (
+                  {currentOrder.includes(playerId) && (focusedSpeechPlayerId === playerId || focusedTagPlayerId === playerId) && (
                     <button 
                       className="ml-auto shrink-0 flex items-center gap-1 text-[10px] font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 px-1.5 py-0.5 rounded transition-colors active:scale-95" 
                       onClick={() => removeSpeaker(day, playerId)}
