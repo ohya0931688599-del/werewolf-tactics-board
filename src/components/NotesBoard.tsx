@@ -132,7 +132,7 @@ export const NotesBoard = () => {
     return h.title.includes(`第 ${day} 天`);
   }) || [];
 
-  const customKeyboardTags = ['金水', '銀水', '查殺', '警徽', '狼坑', '懷疑', '關注', '好人', '重打', '輕踩', '鐵保', '微保'];
+  const customKeyboardTags = ['金水', '查殺', '警徽', '查殺', '狼坑', '懷疑', '關注', '好人', '重打', '輕踩', '鐵保', '微保'];
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const appendTag = (text: string) => {
@@ -371,9 +371,9 @@ export const NotesBoard = () => {
         <div className="max-w-lg mx-auto flex gap-2">
           {/* Left: Tags */}
           <div className="flex-1 grid grid-cols-4 gap-1.5">
-            {customKeyboardTags.map(tag => (
+            {customKeyboardTags.map((tag, idx) => (
               <button
-                key={tag}
+                key={`${tag}-${idx}`}
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => appendTag(tag)}
                 className="bg-gray-800 text-gray-200 border border-gray-700 rounded-md text-xs sm:text-sm py-2.5 font-medium hover:bg-gray-700 active:scale-95 transition-transform"
