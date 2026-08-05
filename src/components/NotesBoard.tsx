@@ -123,17 +123,16 @@ export const NotesBoard = () => {
     });
   }
 
-  const orderedPlayers = [
-    ...currentOrder,
-    ...remainingPlayers
-  ];
+  const orderedPlayers = currentOrder.length >= 2 
+    ? [...currentOrder, ...remainingPlayers]
+    : Array.from({ length: 12 }, (_, i) => i + 1);
 
   const dayVotes = voteHistory?.filter((h) => {
     if (day === 0) return h.title.includes('警長');
     return h.title.includes(`第 ${day} 天`);
   }) || [];
 
-  const customKeyboardTags = ['金水', '銀水', '查殺', '警徽', '雙金', '單飛', '悍跳', '退水', '重打', '輕踩', '鐵保', '微保'];
+  const customKeyboardTags = ['金水', '銀水', '查殺', '警徽', '狼坑', '懷疑', '關注', '好人', '重打', '輕踩', '鐵保', '微保'];
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const appendTag = (text: string) => {
